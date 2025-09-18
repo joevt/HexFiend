@@ -516,9 +516,11 @@ enum LineCoverage_t {
 }
 
 - (NSColor *)caretColor {
+#if defined(__MAC_14_0) && __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_14_0
     if (@available(macOS 14, *)) {
         return NSColor.textInsertionPointColor;
     }
+#endif
     return HFColor.labelColor;
 }
 
@@ -656,7 +658,10 @@ enum LineCoverage_t {
 }
 
 - (void)commonInit {
+#if defined(__MAC_14_0) && __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_14_0
+    // By default this value is false. In macOS 13 and earlier, the default value is true.
     self.clipsToBounds = YES;
+#endif
 }
 
 - (instancetype)initWithFrame:(NSRect)frameRect {
