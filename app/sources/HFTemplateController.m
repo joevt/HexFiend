@@ -441,7 +441,7 @@ static const unsigned long long kMaxCacheSize = 1024 * 1024;
     int16_t val;
     if (![self readInt16:&val forLabel:nil]) {
         if (error) {
-            *error = @"Failed to read int16 bytes";
+            *error = [NSString stringWithFormat:@"Failed to read int16 bytes from position 0x%llx", self.position];
         }
         return nil;
     }
@@ -461,7 +461,7 @@ static const unsigned long long kMaxCacheSize = 1024 * 1024;
     int16_t val;
     if (![self readInt16:&val forLabel:nil]) {
         if (error) {
-            *error = @"Failed to read int16 bytes";
+            *error = [NSString stringWithFormat:@"Failed to read int16 bytes from position 0x%llx", self.position];
         }
         return nil;
     }
@@ -483,7 +483,7 @@ static const unsigned long long kMaxCacheSize = 1024 * 1024;
         int32_t t32;
         if (![self readInt32:&t32 forLabel:nil]) {
             if (error) {
-                *error = @"Failed to read int32 bytes";
+                *error = [NSString stringWithFormat:@"Failed to read int32 bytes from position 0x%llx", self.position];
             }
             return nil;
         }
@@ -492,7 +492,7 @@ static const unsigned long long kMaxCacheSize = 1024 * 1024;
         int64_t t64;
         if (![self readInt64:&t64 forLabel:nil]) {
             if (error) {
-                *error = @"Failed to read int64 bytes";
+                *error = [NSString stringWithFormat:@"Failed to read int64 bytes from position 0x%llx", self.position];
             }
             return nil;
         }
@@ -659,7 +659,7 @@ static const unsigned long long kMaxCacheSize = 1024 * 1024;
             uint8_t u8Value;
             if (![self readUInt8:&u8Value forLabel:nil asHex:NO]) {
                 if (error) {
-                    *error = @"Failed to read uint8 bytes";
+                    *error = [NSString stringWithFormat:@"Failed to read uint8 bytes from position 0x%llx", self.position];
                 }
                 return NO;
             }
@@ -670,7 +670,7 @@ static const unsigned long long kMaxCacheSize = 1024 * 1024;
             uint16_t u16Value;
             if (![self readUInt16:&u16Value forLabel:nil asHex:NO]) {
                 if (error) {
-                    *error = @"Failed to read uint16 bytes";
+                    *error = [NSString stringWithFormat:@"Failed to read uint16 bytes from position 0x%llx", self.position];
                 }
                 return NO;
             }
@@ -681,7 +681,7 @@ static const unsigned long long kMaxCacheSize = 1024 * 1024;
             uint32_t u32Value;
             if (![self readUInt32:&u32Value forLabel:nil asHex:NO]) {
                 if (error) {
-                    *error = @"Failed to read uint32 bytes";
+                    *error = [NSString stringWithFormat:@"Failed to read uint32 bytes from position 0x%llx", self.position];
                 }
                 return NO;
             }
@@ -691,7 +691,7 @@ static const unsigned long long kMaxCacheSize = 1024 * 1024;
         case sizeof(uint64_t): {
             if (![self readUInt64:&rawValue forLabel:nil asHex:NO]) {
                 if (error) {
-                    *error = @"Failed to read uint64 bytes";
+                    *error = [NSString stringWithFormat:@"Failed to read uint64 bytes from position 0x%llx", self.position];
                 }
                 return NO;
             }
