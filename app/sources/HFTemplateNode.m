@@ -16,10 +16,14 @@
 
 @implementation HFTemplateNode
 
-- (instancetype)initWithLabel:(NSString *)label value:(NSString *)value {
+- (instancetype)initWithLabel:(NSString *)label value:(NSString *)value parent:(HFTemplateNode *)parent {
     if ((self = [super init]) != nil) {
         _label = label;
         _value = value;
+        _parent = parent;
+        if (_parent) {
+            [self.parent.children addObject:self];
+        }
     }
     return self;
 }
@@ -30,6 +34,9 @@
         _isGroup = YES;
         _parent = parent;
         _children = [NSMutableArray array];
+        if (_parent) {
+            [self.parent.children addObject:self];
+        }
     }
     return self;
 }

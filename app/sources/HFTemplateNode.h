@@ -12,7 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface HFTemplateNode : NSObject
 
-- (instancetype)initWithLabel:(NSString *_Nullable)label value:(NSString *_Nullable)value;
+- (instancetype)initWithLabel:(NSString *_Nullable)label value:(NSString *_Nullable)value parent:(HFTemplateNode *_Nullable)parent;
 - (instancetype)initGroupWithLabel:(NSString *_Nullable)label parent:(HFTemplateNode *_Nullable)parent;
 
 @property (copy, nullable) NSString *label;

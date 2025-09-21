@@ -537,9 +537,8 @@ static const unsigned long long kMaxCacheSize = 1024 * 1024;
 }
 
 - (void)addNodeWithLabel:(NSString *)label value:(NSString *)value size:(unsigned long long)size {
-    HFTemplateNode *node = [[HFTemplateNode alloc] initWithLabel:label value:value];
+    HFTemplateNode *node = [[HFTemplateNode alloc] initWithLabel:label value:value parent:self.currentNode];
     node.range = HFRangeMake((self.anchor + self.position) - size, size);
-    [self.currentNode.children addObject:node];
     HFRange range = self.currentNode.range;
     range.length = ((node.range.location + node.range.length) - range.location);
     self.currentNode.range = range;
@@ -586,7 +585,6 @@ static const unsigned long long kMaxCacheSize = 1024 * 1024;
 - (void)beginSectionWithLabel:(NSString *)label collapsed:(BOOL)collapsed {
     HFTemplateNode *node = [[HFTemplateNode alloc] initGroupWithLabel:label parent:self.currentNode];
     node.range = HFRangeMake(self.anchor + self.position, 0);
-    [self.currentNode.children addObject:node];
     self.currentNode = node;
     if (collapsed) {
         [self.initiallyCollapsed addObject:node];
@@ -636,7 +634,7 @@ static const unsigned long long kMaxCacheSize = 1024 * 1024;
 
 - (void)addEntryWithLabel:(NSString *)label value:(NSString *)value length:(unsigned long long *)length offset:(unsigned long long *)offset {
     HFTemplateNode *currentNode = self.currentNode;
-    HFTemplateNode *newNode = [[HFTemplateNode alloc] initWithLabel:label value:value];
+    HFTemplateNode *newNode = [[HFTemplateNode alloc] initWithLabel:label value:value parent:currentNode];
     if (length) {
         if (offset) {
             newNode.range = HFRangeMake(self.anchor + *offset, *length);
@@ -649,7 +647,6 @@ static const unsigned long long kMaxCacheSize = 1024 * 1024;
     } else if (offset) {
         HFASSERT(0); // invalid state
     }
-    [currentNode.children addObject:newNode];
 }
 
 - (BOOL)readBits:(NSString *)bits byteCount:(unsigned)numberOfBytes forLabel:(NSString *)label result:(uint64 *)result error:(NSString **)error {
