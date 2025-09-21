@@ -567,34 +567,62 @@
     [self rerunTemplate];
 }
 
-- (HFTemplateNode *)findAndExpandDeepestNodeForPosition:(NSUInteger)position startAt:(HFTemplateNode *)node {
-    if (node.children == nil) {
-        return node;
-    }
-    
-    for (HFTemplateNode *childNode in node.children) {
-        if (HFLocationInRange(position, childNode.range)) {
-            [self.outlineView expandItem:childNode];
-            return [self findAndExpandDeepestNodeForPosition:position startAt:childNode];
+typedef struct {
+    HFTemplateNode * best_node;
+    int best_depth;
+    NSUInteger position;
+} HFSearchState;
+
+- (void)findAndExpandDeepestNodeForPosition:(NSUInteger)position startAt:(HFTemplateNode *)node depth:(int)depth state:(HFSearchState *)state {
+    if (node) {
+        if (HFLocationInRange(position, node.range)) {
+            if (
+                !state->best_node || (
+                    node.range.length < state->best_node.range.length || (
+                        node.range.length == state->best_node.range.length && (
+                            node.range.location > state->best_node.range.location || (
+                                node.range.location == state->best_node.range.location && (
+                                    depth > state->best_depth
+                                )
+                            )
+                        )
+                    )
+                )
+            ) {
+                state->best_node = node;
+                state->best_depth = depth;
+            }
+        }
+        if (node.children) {
+            for (HFTemplateNode *childNode in node.children) {
+                [self findAndExpandDeepestNodeForPosition:position startAt:childNode depth:(depth + 1) state:state];
+            }
         }
     }
-    
-    return node;
+}
+
+- (void)outlineViewToChild:(HFTemplateNode *)node {
+    if (node && node.parent) {
+        [self outlineViewToChild:node.parent];
+        [self.outlineView expandItem:node.parent];
+    }
 }
 
 - (void)showInTemplateAt:(NSUInteger)position {
     if (self.node == nil) {
         return;
     }
-    
-    HFTemplateNode *deepest = [self findAndExpandDeepestNodeForPosition:position startAt:self.node];
-    NSInteger itemIndex = [self.outlineView rowForItem:deepest];
-    if (itemIndex < 0) {
-        return;
+    HFSearchState state = { 0 };
+    [self findAndExpandDeepestNodeForPosition:position startAt:self.node depth:0 state:&state];
+    if (state.best_node) {
+        [self outlineViewToChild:state.best_node];
+        NSInteger itemIndex = [self.outlineView rowForItem:state.best_node];
+        if (itemIndex < 0) {
+            return;
+        }
+        [self.outlineView selectRowIndexes:[NSIndexSet indexSetWithIndex:itemIndex] byExtendingSelection:NO];
+        [self.outlineView scrollRowToVisible:itemIndex];
     }
-    
-    [self.outlineView selectRowIndexes:[NSIndexSet indexSetWithIndex:itemIndex] byExtendingSelection:NO];
-    [self.outlineView scrollRowToVisible:itemIndex];
 }
 
 - (void)copyValue:(id __unused)sender {
