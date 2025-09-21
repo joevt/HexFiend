@@ -612,6 +612,22 @@
     item.target = self;
     item.enabled = obj != nil;
     
+    item = [menu addItemWithTitle:NSLocalizedString(@"Copy Node", nil) action:@selector(copyNode:) keyEquivalent:@""];
+    item.target = self;
+    item.enabled = obj != nil;
+
+    item = [menu addItemWithTitle:NSLocalizedString(@"Copy Node (visible only)", nil) action:@selector(copyNodeVisible:) keyEquivalent:@""];
+    item.target = self;
+    item.enabled = obj != nil;
+
+    item = [menu addItemWithTitle:NSLocalizedString(@"Copy All", nil) action:@selector(copyAll:) keyEquivalent:@""];
+    item.target = self;
+    item.enabled = self.node && self.node.children;
+
+    item = [menu addItemWithTitle:NSLocalizedString(@"Copy All (visible only)", nil) action:@selector(copyAllVisible:) keyEquivalent:@""];
+    item.target = self;
+    item.enabled = self.node && self.node.children;
+
     item = [menu addItemWithTitle:NSLocalizedString(@"Select Bytes", nil) action:@selector(selectBytes:) keyEquivalent:@""];
     item.target = self;
     item.enabled = obj != nil;
@@ -723,6 +739,67 @@ typedef struct {
     NSPasteboard *pboard = [NSPasteboard generalPasteboard];
     [pboard clearContents];
     [pboard setString:node.value forType:NSPasteboardTypeString];
+}
+
+- (void)appendNodeText:(HFTemplateNode *)node showInvisible:(BOOL)showInvisible depth:(int)depth contents:(NSMutableString *)contents {
+    if (node) {
+        int numdigits = (int)HFCountDigitsBase16(self.controller.contentsLength);
+        #if 1
+            int spacedigits = 2; // always 2
+        #else
+            int spacedigits = 5 - (numdigits + 1) % 4; // minimum of 2; numdigits + spacedigits is multiple of 4
+        #endif
+        if (node.label) {
+            HFRangeWrapper * first = [node.ranges firstObject];
+            [contents appendFormat:@"%0*llX%*s%*s%@%s%s%s%@\n", numdigits, first.HFRange.location, spacedigits, "", depth * 4, "",
+                node.label, node.children ? " " : "", node.children ? "{" : "", node.value ? "\t" : "", node.value ? node.value : @""
+            ];
+        }
+        if (node.children) {
+            for (HFTemplateNode *childNode in node.children) {
+                if (showInvisible || [self.outlineView rowForItem:childNode] >= 0)
+                    [self appendNodeText:childNode showInvisible:showInvisible depth:(depth + 1) contents:contents];
+            }
+            if (node.label) {
+                HFRangeWrapper * last = [node.ranges lastObject];
+                [contents appendFormat:@"%0*llX%*s%*s}\n", numdigits, HFMaxRange(last.HFRange), spacedigits, "", depth * 4, ""];
+            }
+        }
+    }
+}
+
+- (void)copyNode:(id __unused)sender {
+    HFTemplateNode *node = [self.outlineView itemAtRow:[self.outlineView selectedRow]];
+    NSPasteboard *pboard = [NSPasteboard generalPasteboard];
+    NSMutableString *contents = [NSMutableString string];
+    [self appendNodeText:node showInvisible:true depth:0 contents:contents];
+    [pboard clearContents];
+    [pboard setString:contents forType:NSPasteboardTypeString];
+}
+
+- (void)copyAll:(id __unused)sender {
+    NSPasteboard *pboard = [NSPasteboard generalPasteboard];
+    NSMutableString *contents = [NSMutableString string];
+    [self appendNodeText:self.node showInvisible:true depth:-1 contents:contents];
+    [pboard clearContents];
+    [pboard setString:contents forType:NSPasteboardTypeString];
+}
+
+- (void)copyNodeVisible:(id __unused)sender {
+    HFTemplateNode *node = [self.outlineView itemAtRow:[self.outlineView selectedRow]];
+    NSPasteboard *pboard = [NSPasteboard generalPasteboard];
+    NSMutableString *contents = [NSMutableString string];
+    [self appendNodeText:node showInvisible:false depth:0 contents:contents];
+    [pboard clearContents];
+    [pboard setString:contents forType:NSPasteboardTypeString];
+}
+
+- (void)copyAllVisible:(id __unused)sender {
+    NSPasteboard *pboard = [NSPasteboard generalPasteboard];
+    NSMutableString *contents = [NSMutableString string];
+    [self appendNodeText:self.node showInvisible:false depth:-1 contents:contents];
+    [pboard clearContents];
+    [pboard setString:contents forType:NSPasteboardTypeString];
 }
 
 - (void)selectBytes:(id __unused)sender {
