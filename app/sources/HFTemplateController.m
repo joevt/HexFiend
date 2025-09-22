@@ -538,10 +538,7 @@ static const unsigned long long kMaxCacheSize = 1024 * 1024;
 
 - (void)addNodeWithLabel:(NSString *)label value:(NSString *)value size:(unsigned long long)size {
     HFTemplateNode *node = [[HFTemplateNode alloc] initWithLabel:label value:value parent:self.currentNode];
-    node.range = HFRangeMake((self.anchor + self.position) - size, size);
-    HFRange range = self.currentNode.range;
-    range.length = ((node.range.location + node.range.length) - range.location);
-    self.currentNode.range = range;
+    [node addRange:(self.anchor + self.position) - size length:size];
 }
 
 - (BOOL)isEOF {
@@ -584,7 +581,7 @@ static const unsigned long long kMaxCacheSize = 1024 * 1024;
 
 - (void)beginSectionWithLabel:(NSString *)label collapsed:(BOOL)collapsed {
     HFTemplateNode *node = [[HFTemplateNode alloc] initGroupWithLabel:label parent:self.currentNode];
-    node.range = HFRangeMake(self.anchor + self.position, 0);
+    [node addRange:self.anchor + self.position length:0];
     self.currentNode = node;
     if (collapsed) {
         [self.initiallyCollapsed addObject:node];
@@ -601,12 +598,12 @@ static const unsigned long long kMaxCacheSize = 1024 * 1024;
 
 - (BOOL)endSection:(NSString *_Nonnull*_Nonnull)error {
     REQUIRE_SECTION();
-    HFTemplateNode *node = self.currentNode;
+    HFTemplateNode *newNode = [[HFTemplateNode alloc] initWithLabel:NULL value:NULL parent:self.currentNode];
+    [newNode addRange:self.anchor + self.position length:0];
+    [newNode mergeRanges];
+    [self.currentNode mergeRanges];
+    [self.currentNode.children removeObject:newNode];
     self.currentNode = self.currentNode.parent;
-    
-    HFRange range = self.currentNode.range;
-    range.length = ((node.range.location + node.range.length) - range.location);
-    self.currentNode.range = range;
     return YES;
 }
 
@@ -633,17 +630,9 @@ static const unsigned long long kMaxCacheSize = 1024 * 1024;
 }
 
 - (void)addEntryWithLabel:(NSString *)label value:(NSString *)value length:(unsigned long long *)length offset:(unsigned long long *)offset {
-    HFTemplateNode *currentNode = self.currentNode;
-    HFTemplateNode *newNode = [[HFTemplateNode alloc] initWithLabel:label value:value parent:currentNode];
+    HFTemplateNode *newNode = [[HFTemplateNode alloc] initWithLabel:label value:value parent:self.currentNode];
     if (length) {
-        if (offset) {
-            newNode.range = HFRangeMake(self.anchor + *offset, *length);
-        } else {
-            newNode.range = HFRangeMake(self.anchor + self.position, *length);
-        }
-        unsigned long long newloc = MIN(currentNode.range.location, newNode.range.location);
-        unsigned long long newlen = MAX(currentNode.range.location + currentNode.range.length, newNode.range.location + newNode.range.length) - newloc;
-        currentNode.range = HFRangeMake(newloc, newlen);
+        [newNode addRange:self.anchor + (offset ? *offset : self.position) length:*length];
     } else if (offset) {
         HFASSERT(0); // invalid state
     }

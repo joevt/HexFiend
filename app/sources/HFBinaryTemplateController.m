@@ -48,7 +48,8 @@
 @property NSArray<HFTemplateFile*> *templates;
 @property NSArray<HFTemplateFile*> *bundleTemplates;
 @property HFTemplateFile *selectedFile;
-@property HFColorRange *colorRange;
+@property NSMutableArray<HFColorRange *> *colorRangesCovered;
+@property NSMutableArray<HFColorRange *> *colorRangesHoles;
 @property NSUInteger anchorPosition;
 @property NSMutableArray *nodesToCollapse;
 @property HFDirectoryWatcher *directoryWatcher;
@@ -466,28 +467,111 @@
     return color;
 }
 
-- (void)updateSelectionColor {
-    if (self.colorRange) {
-        self.colorRange.color = [self selectionColor];
-        [self.controller colorRangesDidChange];
+- (NSColor *)backgroundColor {
+    // why doesn't this change when dark mode changes?
+    // return [NSColor textBackgroundColor];
+
+    // Why doesn't HFDarkModeEnabled() work from HFBinaryTemplateController but does work elsewhere?
+    // The appearance name doesn't change for HFBinaryTemplateController.
+    if (HFDarkModeEnabled()) {
+        return [NSColor colorWithCalibratedWhite:22/255.0 alpha:1];
     }
+    else
+    {
+        return [NSColor colorWithCalibratedWhite:1 alpha:1];
+    }
+}
+
+- (NSColor *)holeColor {
+    NSColorSpace * colorSpace = [NSColorSpace genericRGBColorSpace];
+    HFColor * sel = [self selectionColor];
+    NSColor * rgbSel = [sel colorUsingColorSpace:colorSpace];
+    HFColor * bg = [self backgroundColor];
+    HFColor * rgbBg = [bg colorUsingColorSpace:colorSpace];
+
+    CGFloat blend = 0.44;
+    HFColor * hole = [NSColor
+        colorWithCalibratedRed:rgbSel.redComponent   * blend + rgbBg.redComponent   * (1 - blend)
+                         green:rgbSel.greenComponent * blend + rgbBg.greenComponent * (1 - blend)
+                          blue:rgbSel.blueComponent  * blend + rgbBg.blueComponent  * (1 - blend)
+                         alpha:1
+    ];
+    return hole;
+}
+
+- (void)updateSelectionColor {
+    BOOL colorsChanged = false;
+    if (self.colorRangesCovered && self.colorRangesCovered.count) {
+        HFColor * sel = [self selectionColor];
+        for (HFColorRange *obj in self.colorRangesCovered) {
+            obj.color = sel;
+        }
+        colorsChanged = true;
+    }
+    if (self.colorRangesHoles && self.colorRangesHoles.count) {
+        HFColor * hole = [self holeColor];
+        for (HFColorRange *obj in self.colorRangesHoles) {
+            obj.color = hole;
+        }
+        colorsChanged = true;
+    }
+    if (colorsChanged)
+        [self.controller colorRangesDidChange];
 }
 
 - (void)updateSelectionColorRange {
     NSInteger row = self.outlineView.selectedRow;
+
+    BOOL colorsChanged = false;
+    if (self.colorRangesCovered && self.colorRangesCovered.count) {
+        [self.controller.colorRanges removeObjectsInArray:self.colorRangesCovered];
+        [self.colorRangesCovered removeAllObjects];
+        colorsChanged = true;
+    }
+    if (self.colorRangesHoles && self.colorRangesHoles.count) {
+        [self.controller.colorRanges removeObjectsInArray:self.colorRangesHoles];
+        [self.colorRangesHoles removeAllObjects];
+        colorsChanged = true;
+    }
+
     if (row != -1) {
         HFTemplateNode *node = [self.outlineView itemAtRow:row];
-        if (!self.colorRange) {
-            self.colorRange = [[HFColorRange alloc] init];
-            self.colorRange.color = [self selectionColor];
-            [self.controller.colorRanges addObject:self.colorRange];
+        if (node.ranges.count) {
+            if (!self.colorRangesCovered)
+                self.colorRangesCovered = [[NSMutableArray alloc] init];
+            if (!self.colorRangesHoles)
+                self.colorRangesHoles = [[NSMutableArray alloc] init];
+            HFColor * sel = [self selectionColor];
+            HFColor * hole = [self holeColor];
+            BOOL havePrevious = false;
+            unsigned long long previousMax = 0;
+            for (HFRangeWrapper *range in node.ranges) {
+                if (havePrevious && previousMax < range.HFRange.location) {
+                    HFColorRange * colorRange = [[HFColorRange alloc] init];
+                    colorRange.color = hole;
+                    colorRange.range = [HFRangeWrapper withRange:HFRangeMake(previousMax, range.HFRange.location - previousMax)];
+                    [self.colorRangesHoles addObject:colorRange];
+                    colorsChanged = true;
+                }
+                if (range.HFRange.length) {
+                    HFColorRange * colorRange = [[HFColorRange alloc] init];
+                    colorRange.color = sel;
+                    colorRange.range = range;
+                    [self.colorRangesCovered addObject:colorRange];
+                    colorsChanged = true;
+                }
+                havePrevious = true;
+                previousMax = HFMaxRange(range.HFRange);
+            }
         }
-        self.colorRange.range = [HFRangeWrapper withRange:node.range];
+    }
+
+    if (colorsChanged) {
+        if (self.colorRangesCovered)
+            [self.controller.colorRanges addObjectsFromArray:self.colorRangesCovered];
+        if (self.colorRangesHoles)
+            [self.controller.colorRanges addObjectsFromArray:self.colorRangesHoles];
         [self.controller colorRangesDidChange];
-    } else if (self.colorRange) {
-        [self.controller.colorRanges removeObject:self.colorRange];
-        [self.controller colorRangesDidChange];
-        self.colorRange = nil;
     }
 }
 
@@ -557,7 +641,8 @@
 
 - (void)jumpToField:(id __unused)sender {
     HFTemplateNode *node = [self.outlineView itemAtRow:[self.outlineView selectedRow]];
-    HFRange range = HFRangeMake(node.range.location, 0);
+    HFRangeWrapper *first = [node.ranges firstObject];
+    HFRange range = HFRangeMake(first.HFRange.location, 0);
     [self.controller setSelectedContentsRanges:@[[HFRangeWrapper withRange:range]]];
     [self.controller maximizeVisibilityOfContentsRange:range];
 }
@@ -569,19 +654,26 @@
 
 typedef struct {
     HFTemplateNode * best_node;
+    HFRange best_range;
     int best_depth;
     NSUInteger position;
 } HFSearchState;
 
 - (void)findAndExpandDeepestNodeForPosition:(NSUInteger)position startAt:(HFTemplateNode *)node depth:(int)depth state:(HFSearchState *)state {
     if (node) {
-        if (HFLocationInRange(position, node.range)) {
+        HFRangeWrapper * first = [node.ranges firstObject];
+        HFRangeWrapper * last = [node.ranges lastObject];
+        unsigned long long loc = first.HFRange.location;
+        unsigned long long len = HFMaxRange(last.HFRange) - loc;
+        HFRange range = HFRangeMake(loc, len);
+        
+        if (HFLocationInRange(position, range)) {
             if (
                 !state->best_node || (
-                    node.range.length < state->best_node.range.length || (
-                        node.range.length == state->best_node.range.length && (
-                            node.range.location > state->best_node.range.location || (
-                                node.range.location == state->best_node.range.location && (
+                    range.length < state->best_range.length || (
+                        range.length == state->best_range.length && (
+                            range.location > state->best_range.location || (
+                                range.location == state->best_range.location && (
                                     depth > state->best_depth
                                 )
                             )
@@ -590,6 +682,7 @@ typedef struct {
                 )
             ) {
                 state->best_node = node;
+                state->best_range = range;
                 state->best_depth = depth;
             }
         }
@@ -634,7 +727,12 @@ typedef struct {
 
 - (void)selectBytes:(id __unused)sender {
     HFTemplateNode *node = [self.outlineView itemAtRow:[self.outlineView selectedRow]];
-    [self.controller setSelectedContentsRanges:@[[HFRangeWrapper withRange:node.range]]];
+    HFRangeWrapper * first = [node.ranges firstObject];
+    HFRangeWrapper * last = [node.ranges lastObject];
+    unsigned long long loc = first.HFRange.location;
+    unsigned long long len = HFMaxRange(last.HFRange) - loc;
+    HFRange range = HFRangeMake(loc, len);
+    [self.controller setSelectedContentsRanges:@[[HFRangeWrapper withRange:range]]];
 }
 
 - (void)copy:(id)sender {

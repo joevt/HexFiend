@@ -23,7 +23,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property NSMutableArray *children;
 
-@property HFRange range;
+@property NSMutableArray *ranges;
+
+- (void)mergeRanges;
+- (void)addRange:(unsigned long long)location length:(unsigned long long)length;
 
 @end
 
