@@ -483,7 +483,7 @@ NSString *HFDescribeByteCountWithPrefixAndSuffix(const char *_Nullable stringPre
 + (HFRangeWrapper *)withRange:(HFRange)range;
 
 /*! Creates an NSArray of HFRangeWrappers for this HFRange. */
-+ (NSArray<HFRangeWrapper *> *)withRanges:(const HFRange *)ranges count:(NSUInteger)count;
++ (NSMutableArray<HFRangeWrapper *> *)withRanges:(const HFRange *)ranges count:(NSUInteger)count;
 
 /*! Given an NSArray of HFRangeWrappers, get all of the HFRanges into a C array. */
 + (void)getRanges:(HFRange *)ranges fromArray:(NSArray<HFRangeWrapper *> *)array;

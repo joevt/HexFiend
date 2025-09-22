@@ -11,7 +11,7 @@
     return result;
 }
 
-+ (NSArray *)withRanges:(const HFRange *)ranges count:(NSUInteger)count {
++ (NSMutableArray *)withRanges:(const HFRange *)ranges count:(NSUInteger)count {
     HFASSERT(count == 0 || ranges != NULL);
     NSUInteger i;
     NSMutableArray *result = [NSMutableArray arrayWithCapacity:count];
