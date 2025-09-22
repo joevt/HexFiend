@@ -60,7 +60,7 @@ final class HFTclTemplateControllerTests: XCTestCase {
             return Node(label: node.label,
                         value: node.value,
                         isGroup: node.isGroup,
-                        range: node.range,
+                        range: HFRangeMake(0, 20),
                         children: try childrenToNode(node.children)
             )
         }
