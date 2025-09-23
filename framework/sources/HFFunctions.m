@@ -61,7 +61,7 @@ static int hfrange_compare(const void *ap, const void *bp) {
         leading++;
         if (leading < length) {
             HFRange leadRange = ranges[leading], trailRange = ranges[trailing];
-            if (HFIntersectsRange(leadRange, trailRange) || HFMaxRange(leadRange) == trailRange.location || HFMaxRange(trailRange) == leadRange.location) {
+            if (HFTouchingRange(leadRange, trailRange)) {
                 ranges[trailing] = HFUnionRange(leadRange, trailRange);
             }
             else {
