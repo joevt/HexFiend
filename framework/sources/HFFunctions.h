@@ -218,6 +218,11 @@ static inline BOOL HFIntersectsRange(HFRange a, HFRange b) {
     return ! (clause1 || clause2);
 }
 
+/*! Returns YES if the given ranges intersect or are adjacent. */
+static inline BOOL HFTouchingRange(HFRange a, HFRange b) {
+    return a.location <= HFMaxRange(b) && HFMaxRange(a) >= b.location;
+}
+
 /*! Returns YES if the given ranges intersect. Two ranges are considered to intersect if any fraction overlaps; zero-length ranges do not intersect anything. */
 static inline BOOL HFFPIntersectsRange(HFFPRange a, HFFPRange b) {
     // Ranges are said to intersect if they share at least one value.  Therefore, zero length ranges never intersect anything.
@@ -230,7 +235,7 @@ static inline BOOL HFFPIntersectsRange(HFFPRange a, HFFPRange b) {
 
 /*! Returns a range containing the union of the given ranges.  These ranges must either intersect or be adjacent: there cannot be any "holes" between them. */
 static inline HFRange HFUnionRange(HFRange a, HFRange b) {
-    assert(HFIntersectsRange(a, b) || HFMaxRange(a) == b.location || HFMaxRange(b) == a.location);
+    assert(HFTouchingRange(a, b));
     HFRange result;
     result.location = MIN(a.location, b.location);
     assert(HFSumDoesNotOverflow(a.location, a.length));
