@@ -599,6 +599,7 @@
 
 - (void)removeAllHighlights:(id __unused)sender {
     [self.controller.colorRanges removeAllObjects];
+    [self.controller colorRangesDidChange];
 }
 
 @end
