@@ -563,16 +563,22 @@
 #endif
 
 - (void)highlightSelection:(id __unused)sender {
-    HFColorRange *range = [[HFColorRange alloc] init];
-    range.range = self.controller.selectedContentsRanges[0];
-    [self.controller.colorRanges addObject:range];
+    NSMutableArray<HFColorRange *> *colorRanges = [[NSMutableArray alloc] init];
+    for (HFRangeWrapper *selectionRange in self.controller.selectedContentsRanges) {
+        HFColorRange *range = [[HFColorRange alloc] init];
+        range.range = selectionRange;
+        [colorRanges addObject:range];
+    }
+    [self.controller.colorRanges addObjectsFromArray:colorRanges];
 #if !TARGET_OS_IPHONE
     NSColorPanel *panel = [NSColorPanel sharedColorPanel];
     id windowObserver = [[NSNotificationCenter defaultCenter] addObserverForName:NSWindowWillCloseNotification object:panel queue:nil usingBlock:^(NSNotification *note __unused) {
         [NSApp stopModal];
     }];
     id colorObserver = [[NSNotificationCenter defaultCenter] addObserverForName:NSColorPanelColorDidChangeNotification object:panel queue:nil usingBlock:^(NSNotification * __unused note) {
-        range.color = panel.color;
+        for (HFColorRange *range in colorRanges) {
+            range.color = panel.color;
+        }
         [self.controller colorRangesDidChange];
     }];
     panel.continuous = YES;
