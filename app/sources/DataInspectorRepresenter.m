@@ -203,7 +203,8 @@ NSString * const DataInspectorDidDeleteAllRows = @"DataInspectorDidDeleteAllRows
                                  inspector.type == eInspectorTypeUnsignedInteger ||
                                  inspector.type == eInspectorTypeFloatingPoint);
         const bool allowsNumberBase = (inspector.type == eInspectorTypeSignedInteger ||
-                                 inspector.type == eInspectorTypeUnsignedInteger);
+                                 inspector.type == eInspectorTypeUnsignedInteger ||
+                                 inspector.type == eInspectorTypeSelection);
         [cell setEnabled:allowsEndianness || allowsNumberBase];
         NSPopUpButtonCell *popUpCell = (NSPopUpButtonCell*)cell;
         HFASSERT(popUpCell.numberOfItems == 6);

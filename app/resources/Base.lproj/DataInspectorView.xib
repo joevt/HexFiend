@@ -58,6 +58,9 @@
                                             <menuItem title="Binary" id="MIA-go-iIQ">
                                                 <modifierMask key="keyEquivalentModifierMask"/>
                                             </menuItem>
+                                            <menuItem title="Selection" id="YBG-bg-av3">
+                                                <modifierMask key="keyEquivalentModifierMask"/>
+                                            </menuItem>
                                         </items>
                                     </menu>
                                 </popUpButtonCell>

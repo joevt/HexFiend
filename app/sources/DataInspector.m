@@ -419,6 +419,25 @@ static NSAttributedString *inspectionSuccess(NSString *s) {
 }
 
 - (NSAttributedString *)valueForController:(HFController *)controller ranges:(NSArray *)ranges isError:(BOOL *)outIsError {
+
+    if ([self type] == eInspectorTypeSelection) {
+        NSString *str = [NSString string];
+        for (HFRangeWrapper *range in ranges) {
+            if (range.HFRange.length > 0) {
+                if ([self numberBase] == eNumberBaseDecimal)
+                    str = [str stringByAppendingFormat:@"%s[%llu, %llu] (%llu bytes)", str.length > 0 ? ", " : "", range.HFRange.location, HFMaxRange(range.HFRange) - 1, range.HFRange.length];
+                else
+                    str = [str stringByAppendingFormat:@"%s[0x%llX, 0x%llX] (0x%llX bytes)", str.length > 0 ? ", " : "", range.HFRange.location, HFMaxRange(range.HFRange) - 1, range.HFRange.length];
+            } else {
+                if ([self numberBase] == eNumberBaseDecimal)
+                    str = [str stringByAppendingFormat:@"%s[%llu] (%llu bytes)", str.length > 0 ? ", " : "", range.HFRange.location, range.HFRange.length];
+                else
+                    str = [str stringByAppendingFormat:@"%s[0x%llX] (0x%llX bytes)", str.length > 0 ? ", " : "", range.HFRange.location, range.HFRange.length];
+            }
+        }
+        return inspectionSuccess(str);
+    }
+
     /* Just do a rough cut on length before going to valueForBytes. */
     
     if ([ranges count] != 1) {
