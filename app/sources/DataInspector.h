@@ -20,6 +20,7 @@ enum InspectorType_t {
     eInspectorTypeSLEB128,
     eInspectorTypeULEB128,
     eInspectorTypeBinary,
+    eInspectorTypeSelection,
     
     // Total number of inspector types.
     eInspectorTypeCount
