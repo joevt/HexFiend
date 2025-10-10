@@ -60,6 +60,7 @@ enum command {
     command_sectionname,
     command_sectionvalue,
     command_sectioncollapse,
+    command_sectiondepth,
     command_zlib_uncompress,
     command_entry,
     command_uint8_bits,
@@ -119,6 +120,7 @@ DEFINE_COMMAND(endsection)
 DEFINE_COMMAND(sectionname)
 DEFINE_COMMAND(sectionvalue)
 DEFINE_COMMAND(sectioncollapse)
+DEFINE_COMMAND(sectiondepth)
 DEFINE_COMMAND(zlib_uncompress)
 DEFINE_COMMAND(entry)
 DEFINE_COMMAND(uint8_bits)
@@ -190,6 +192,7 @@ DEFINE_COMMAND(sleb128)
         CMD(sectionname),
         CMD(sectionvalue),
         CMD(sectioncollapse),
+        CMD(sectiondepth),
         CMD(zlib_uncompress),
         CMD(entry),
         CMD(uint8_bits),
@@ -575,6 +578,15 @@ DEFINE_COMMAND(sleb128)
             if (![self sectionCollapse:&error]) {
                 Tcl_SetObjResult(_interp, Tcl_NewStringObj(error.UTF8String, -1));
                 return TCL_ERROR;
+            }
+            break;
+        }
+        case command_sectiondepth: {
+            {
+                uint64_t depth = 0;
+                for (HFTemplateNode *section = self.currentSection; section && section.parent; section = section.parent)
+                    depth++;
+                Tcl_SetObjResult(_interp, tcl_obj_from_uint64(depth));
             }
             break;
         }
