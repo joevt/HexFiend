@@ -60,6 +60,7 @@ enum command {
     command_sectionname,
     command_sectionvalue,
     command_sectioncollapse,
+    command_sectionroot,
     command_sectiondepth,
     command_zlib_uncompress,
     command_entry,
@@ -120,6 +121,7 @@ DEFINE_COMMAND(endsection)
 DEFINE_COMMAND(sectionname)
 DEFINE_COMMAND(sectionvalue)
 DEFINE_COMMAND(sectioncollapse)
+DEFINE_COMMAND(sectionroot)
 DEFINE_COMMAND(sectiondepth)
 DEFINE_COMMAND(zlib_uncompress)
 DEFINE_COMMAND(entry)
@@ -192,6 +194,7 @@ DEFINE_COMMAND(sleb128)
         CMD(sectionname),
         CMD(sectionvalue),
         CMD(sectioncollapse),
+        CMD(sectionroot),
         CMD(sectiondepth),
         CMD(zlib_uncompress),
         CMD(entry),
@@ -576,6 +579,15 @@ DEFINE_COMMAND(sleb128)
             CHECK_NO_ARG;
             NSString *error = nil;
             if (![self sectionCollapse:&error]) {
+                Tcl_SetObjResult(_interp, Tcl_NewStringObj(error.UTF8String, -1));
+                return TCL_ERROR;
+            }
+            break;
+        }
+        case command_sectionroot: {
+            CHECK_NO_ARG;
+            NSString *error = nil;
+            if (![self sectionRoot:&error]) {
                 Tcl_SetObjResult(_interp, Tcl_NewStringObj(error.UTF8String, -1));
                 return TCL_ERROR;
             }

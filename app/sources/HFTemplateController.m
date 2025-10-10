@@ -625,6 +625,13 @@ static const unsigned long long kMaxCacheSize = 1024 * 1024;
     return YES;
 }
 
+- (BOOL)sectionRoot:(NSString *_Nonnull*_Nonnull)error {
+    while (self.currentNode && self.currentNode.parent) {
+        [self endSection:error];
+    }
+    return YES;
+}
+
 - (HFTemplateNode *)currentSection {
     return self.currentNode;
 }
